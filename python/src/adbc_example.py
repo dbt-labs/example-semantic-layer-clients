@@ -42,7 +42,7 @@ def main(args):
             cur.execute(
                 "select * from {{semantic_layer.query(metrics=['cancellation_rate'])}}"
             )
-            print(cur.fetch_df())
+            print(cur.fetch_df())  # or cur.fetch_arrow_table()
 
 
 if __name__ == "__main__":
