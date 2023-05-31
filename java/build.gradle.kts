@@ -15,6 +15,7 @@ repositories {
 
 dependencies {
     implementation("org.apache.arrow:flight-sql-jdbc-driver:12.0.0")
+    implementation("org.verdictdb:verdictdb-core:0.5.8")
 }
 
 application {
