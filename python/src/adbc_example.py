@@ -1,3 +1,4 @@
+import os
 import sys
 from dataclasses import dataclass
 from urllib.parse import parse_qs, urlparse
@@ -26,7 +27,7 @@ def parse_jdbc_uri(uri):
 
 
 def main(args):
-    conn_attr = parse_jdbc_uri(args[1])
+    conn_attr = parse_jdbc_uri(os.environ["DBT_JDBC_URL"])
     with connect(
         conn_attr.host,
         db_kwargs={
@@ -36,13 +37,10 @@ def main(args):
                 for k, v in conn_attr.params.items()
             },
         },
-    ) as conn:
-        print(conn.adbc_get_info())
-        with conn.cursor() as cur:
-            cur.execute(
-                "select * from {{semantic_layer.query(metrics=['cancellation_rate'])}}"
-            )
-            print(cur.fetch_df())  # or cur.fetch_arrow_table()
+    ) as conn, conn.cursor() as cur:
+        cur.execute(args[1])
+        df = cur.fetch_df()  # fetches as Pandas DF, can also do fetch_arrow_table
+    print(df.to_string())
 
 
 if __name__ == "__main__":
