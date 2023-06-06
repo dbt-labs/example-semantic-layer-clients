@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 from dataclasses import dataclass
@@ -5,6 +6,7 @@ from urllib.parse import parse_qs, urlparse
 
 from adbc_driver_flightsql import DatabaseOptions
 from adbc_driver_flightsql.dbapi import connect
+from pandas import DataFrame
 
 
 @dataclass
@@ -38,9 +40,31 @@ def main(args):
             },
         },
     ) as conn, conn.cursor() as cur:
-        cur.execute(args[1])
-        df = cur.fetch_df()  # fetches as Pandas DF, can also do fetch_arrow_table
-    print(df.to_string())
+        errors = {}
+        success = []
+        metrics = get_metrics(cur)
+        for metric, properties in metrics.items():
+            try:
+                cur.execute(
+                    f"select * from {{{{semantic_layer.query(metrics=['{m}'])}}}}"
+                )
+                cur.fetch_df()
+                success.append(metric)
+            except Exception as e:
+                errors[metric] = str(e)
+
+        print(json.dumps(errors, indent=2).replace("\\n", "\n"))
+
+        print(f"Successful metrics: {success}")
+
+
+def get_metrics(cur) -> DataFrame:
+    cur.execute("select * from {{semantic_layer.metrics()}}")
+    df = cur.fetch_df()
+    return {
+        r["NAME"]: {"dimensions": set(r["DIMENSIONS"].split(", ")), "type": r["TYPE"]}
+        for i, r in df.iterrows()
+    }
 
 
 if __name__ == "__main__":
