@@ -46,7 +46,7 @@ def main(args):
         for metric, properties in metrics.items():
             try:
                 cur.execute(
-                    f"select * from {{{{semantic_layer.query(metrics=['{m}'])}}}}"
+                    f"select * from {{{{semantic_layer.query(metrics=['{metric}'])}}}}"
                 )
                 cur.fetch_df()
                 success.append(metric)
