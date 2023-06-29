@@ -5,8 +5,7 @@ description = "Example for using ADBC to query Semantic Layer."
 python = ">=3.9"
 
 dependencies = [
-  "adbc-driver-flightsql",
-  "pyarrow",
+  "adbc-driver-flightsql>=0.5.1,<1.0",
   "pandas"
 ]
 
