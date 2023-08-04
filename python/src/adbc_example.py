@@ -19,7 +19,7 @@ def parse_jdbc_uri(uri):
     params = {k.lower(): v[0] for k, v in parse_qs(parsed.query).items()}
     return ConnAttr(
         host=parsed.path.replace("arrow-flight-sql", "grpc")
-        if params.pop("useencryption") == "false"
+        if params.pop("useencryption", None) == "false"
         else parsed.path.replace("arrow-flight-sql", "grpc+tls"),
         params=params,
         auth_header=f"Bearer {params.pop('token')}",
