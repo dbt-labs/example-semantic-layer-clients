@@ -9,12 +9,13 @@ from adbc_driver_flightsql.dbapi import connect
 
 @dataclass
 class ConnAttr:
-    host: str
-    params: dict
-    auth_header: str
+    host: str  # "grpc+tls:semantic-layer.cloud.getdbt.com:443"
+    params: dict  # {"environmentId": 42}
+    auth_header: str  # "Bearer dbts_thisismyprivateservicetoken"
 
 
 def parse_jdbc_uri(uri):
+    """Helper function to convert the JDBC url into ConnAttr."""
     parsed = urlparse(uri)
     params = {k.lower(): v[0] for k, v in parse_qs(parsed.query).items()}
     return ConnAttr(
