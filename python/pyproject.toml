@@ -7,7 +7,8 @@ python = ">=3.9"
 dependencies = [
   "adbc-driver-flightsql",
   "pyarrow",
-  "pandas"
+  "pandas",
+  "httpx[http2]"
 ]
 
 [build-system]
