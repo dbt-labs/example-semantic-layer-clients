@@ -37,7 +37,7 @@ def main(args):
 
 
 def make_request(env_id, api_host, token):
-    headers = {"authorization": f"Bearer ${token}"}
+    headers = {"authorization": f"Bearer {token}"}
     mut = string.Template(
         """
         mutation {
