@@ -10,8 +10,9 @@ class JDBCExample {
         String connectionUrl = System.getenv("DBT_JDBC_URL");
         try (Connection conn = DriverManager.getConnection(connectionUrl)) {
             try (Statement s = conn.createStatement()) {
-                ResultSet rs = s.executeQuery(args[0]);
-                DBTablePrinter.printResultSet(rs);
+                try (ResultSet rs = s.executeQuery(args[0])) {
+                    DBTablePrinter.printResultSet(rs);
+                }
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
