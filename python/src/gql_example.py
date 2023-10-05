@@ -65,20 +65,7 @@ def execute_query(host, environment_id, token):
         return print("Error creating query: " + str(resp["errors"]))
 
     query_id = resp["data"]["createQuery"]["queryId"]
-    query = string.Template(
-        """
-        {
-          query(queryId:"$query_id", environmentId:$environment_id){
-            status
-            arrowResult
-            error
-            queryId
-          }
-        }
-        """
-    ).substitute(query_id=query_id, environment_id=environment_id)
-
-    resp = s.post(host, json={"query": query}, headers=headers).json()
+    resp = query_request(host, headers, query_id, environment_id)
     if resp.get("errors"):
         return print("Error fetching query status: " + str(resp["errors"]))
 
@@ -86,17 +73,44 @@ def execute_query(host, environment_id, token):
         "SUCCESSFUL",
         "FAILED",
     ]:
-        resp = s.post(host, json={"query": query}, headers=headers).json()
+        resp = query_request(host, headers, query_id, environment_id)
 
     if resp["data"]["query"]["status"] == "FAILED":
         return print("Error fetching results: " + str(resp["data"]["query"]["error"]))
 
-    # TODO: handle pagination
+    tables = [get_table(resp)]
+
+    for i in range(2, resp["data"]["query"]["totalPages"] + 1):
+        resp = query_request(host, headers, query_id, environment_id, i)
+        tables.append(get_table(resp))
+
+    arrow_table = pa.concat_tables(tables)
+    print(arrow_table.to_pandas())
+
+
+def query_request(host, headers, query_id, environment_id, page_num=1):
+    query = string.Template(
+        """
+        {
+          query(queryId:"$query_id", environmentId:$environment_id, pageNum:$page_num){
+            status
+            arrowResult
+            error
+            queryId
+            totalPages
+          }
+        }
+        """
+    ).substitute(query_id=query_id, environment_id=environment_id, page_num=page_num)
+    resp = s.post(host, json={"query": query}, headers=headers).json()
+    return resp
+
+
+def get_table(resp):
     with pa.ipc.open_stream(
         base64.b64decode(resp["data"]["query"]["arrowResult"])
     ) as reader:
-        arrow_table = pa.Table.from_batches(reader, reader.schema)
-    print(arrow_table.to_pandas())
+        return reader.read_all()
 
 
 if __name__ == "__main__":
