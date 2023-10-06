@@ -12,6 +12,7 @@ client that auto-generates code based on the public schema.
 import base64
 import os
 import string
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from urllib.parse import parse_qs, urlparse
 
@@ -80,9 +81,14 @@ def execute_query(host, environment_id, token):
 
     tables = [get_table(resp)]
 
-    for i in range(2, resp["data"]["query"]["totalPages"] + 1):
-        resp = query_request(host, headers, query_id, environment_id, i)
-        tables.append(get_table(resp))
+    # Fetching pages asynchronously is significantly faster for large data sets
+    with ThreadPoolExecutor() as executor:
+        jobs = [
+            executor.submit(query_request, host, headers, query_id, environment_id, i)
+            for i in range(2, resp["data"]["query"]["totalPages"] + 1)
+        ]
+        for future in as_completed(jobs):
+            tables.append(get_table(future.result()))
 
     arrow_table = pa.concat_tables(tables)
     print(arrow_table.to_pandas())
